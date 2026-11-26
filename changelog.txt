@@ -1,3 +1,7 @@
+v2.1.0
+- Hide SiloMod's and JellyMod's tokens and device IDs before uploading a log (Jellyfin's MediaBrowser Token and
+  api_key, Silo's stream token and Bearer tokens, *_token fields, DeviceId and X-Silo-Device-Id)
+
 v2.0.8
 - Add logging for current URL; allow dialog cancellation
 
