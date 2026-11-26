@@ -1,0 +1,38 @@
+name: Release
+
+on:
+  push:
+    tags: ['loguploader-v*']
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out the tagged commit
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Check the tag against addon.xml
+        run: |
+          version=$(python3 -c "import xml.etree.ElementTree as E; print(E.parse('addon.xml').getroot().get('version'))")
+          if [ "loguploader-v$version" != "$GITHUB_REF_NAME" ]; then
+            echo "::error::tag $GITHUB_REF_NAME, but addon.xml says $version"
+            exit 1
+          fi
+          echo "VERSION=$version" >> "$GITHUB_ENV"
+      - name: Build the add-on zip and its SHA256SUMS
+        run: |
+          zip="script.pm4k.loguploader-$VERSION.zip"
+          # the add-on as Kodi installs it: everything but the development files
+          git archive --format=zip --prefix=script.pm4k.loguploader/ -o "$zip" HEAD -- . \
+            ':!tests' ':!requirements-dev.txt' ':!.gitignore' ':!.github'
+          sha256sum "$zip" > SHA256SUMS
+      - name: Publish the release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: >-
+          gh release create "$GITHUB_REF_NAME" "script.pm4k.loguploader-$VERSION.zip" SHA256SUMS
+          --verify-tag --title "PM4K Logfile Uploader $VERSION" --generate-notes
