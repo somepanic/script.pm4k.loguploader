@@ -1,0 +1,33 @@
+name: Tests
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  tests:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Check out the code
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Set up Python 3.13, the version CoreELEC's Kodi runs
+        uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0  # v7.1.0
+        with:
+          python-version: '3.13'
+      - name: Install the test packages
+        run: python -m pip install -r requirements-dev.txt
+      - name: Run the tests
+        run: python -m pytest -q -p no:cacheprovider tests
+      - name: Check that every test file ran
+        run: |
+          files=$(find tests -maxdepth 1 -name 'test_*.py' | wc -l)
+          ran=$(python -m pytest -q -p no:cacheprovider --collect-only tests | grep -o '^tests/test_[^:]*[.]py' | sort -u | wc -l)
+          echo "test files: $files, collected: $ran"
+          [ "$files" -eq "$ran" ]
