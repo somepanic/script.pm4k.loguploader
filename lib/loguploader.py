@@ -38,6 +38,16 @@ REPLACES = (('//.+?:.+?@', '//USER:PASSWORD@'),
             (r'((?:PlexServer|connection for|reachability for|Merged) \'\w{,6})\w+\'', r'\1*****'),
             # mask clientIdentifiers
             (r'(clientIdentifier:\w{,6})\w+?(\w{,6})\b', r'\1*****\2'),
+            # mask secret URL and pipe header parameters: Jellyfin's api_key, Silo's stream token (st), *_token
+            (r'(?i)([?&|](?:st|api_?key|[\w-]*token|signature|sig|secret|password)=)[^&|\s"\'<>]+', r'\1*****'),
+            # mask Jellyfin's MediaBrowser token, plain or URL-encoded: Token="..." / Token%3D%22...%22
+            (r'(?i)((?<![a-z])Token(?:=|%3D)(?:"|%22|\\")?)[^"&|\s,%\\]+', r'\1*****'),
+            # mask Bearer tokens (Silo), plain or URL-encoded
+            (r'(?i)(\bBearer(?:\s+|%20|\+))[\w.~+/=-]+', r'\1*****'),
+            # mask token headers and fields: X-Emby-Token: x, 'access_token': 'x', "AccessToken": "x"
+            (r'(?i)((?<![\w-])(?:[\w-]*token|api_?key|password|secret)["\']?\s*[:=]\s*["\']?)[^"\'\s,}&|]+', r'\1*****'),
+            # mask device ids (Jellyfin's DeviceId, Silo's X-Silo-Device-Id) after their first 6 characters
+            (r'(?i)((?:DeviceId|Device-Id)["\']?\s*(?:=|%3D|:)\s*(?:"|%22|\\"|\')?[\w-]{,6})[\w-]+', r'\1*****'),
 )
 
 def log(txt):
